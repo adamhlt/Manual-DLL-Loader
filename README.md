@@ -66,4 +66,3 @@ int main()
 	return 0;
 }
 ```
-https://user-images.githubusercontent.com/48086737/156903449-b7e87613-f45d-4ae9-8a58-c2d2168713dc.mp4
