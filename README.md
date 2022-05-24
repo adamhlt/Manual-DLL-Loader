@@ -1,4 +1,4 @@
-![Project Banner](https://github.com/adamhlt/Manual-DLL-Loader/blob/main/Ressources/banner.png)
+![Banner](https://user-images.githubusercontent.com/48086737/170104942-af1e5d75-b76f-4021-b275-74f278d92bb6.png)
 
 # Manual DLL Loader
 
