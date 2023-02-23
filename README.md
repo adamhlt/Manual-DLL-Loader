@@ -35,7 +35,8 @@ The GetFunctionAddress can also be used with a library imported with LoadLibrary
 1. Open the solution file (.sln).
 2. Build the project in Release (x86 or x64)
 
-The loader can be compiled in x86 or x64.
+> **Note** <br>
+> The loader can be compiled in x86 or x64.
 
 ## :test_tube: Example
 
