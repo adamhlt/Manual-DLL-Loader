@@ -15,7 +15,7 @@ HANDLE MemoryLoader::GetFileContent(const LPSTR lpFilePath)
 		return nullptr;
 	}
 
-	const DWORD_PTR dFileSize = GetFileSize(hFile, nullptr);
+	const DWORD dFileSize = GetFileSize(hFile, nullptr);
 	if (dFileSize == INVALID_FILE_SIZE)
 	{
 		printf("[-] An error occured when trying to get the PE file size !\n");
