@@ -1,8 +1,20 @@
-![Banner](https://user-images.githubusercontent.com/48086737/170104942-af1e5d75-b76f-4021-b275-74f278d92bb6.png)
-
-# Manual DLL Loader
-
-[![C++](https://img.shields.io/badge/language-C%2B%2B-%23f34b7d.svg?style=for-the-badge&logo=appveyor)](https://en.wikipedia.org/wiki/C%2B%2B) [![Windows](https://img.shields.io/badge/platform-Windows-0078d7.svg?style=for-the-badge&logo=appveyor)](https://en.wikipedia.org/wiki/Microsoft_Windows) [![x86](https://img.shields.io/badge/arch-x86-red.svg?style=for-the-badge&logo=appveyor)](https://en.wikipedia.org/wiki/X86) [![x64](https://img.shields.io/badge/arch-x64-green.svg?style=for-the-badge&logo=appveyor)](https://en.wikipedia.org/wiki/X64)
+```
+        __  ___                        __   ____  __    __       __                    __       
+       /  |/  /___ _____  __  ______ _/ /  / __ \/ /   / /      / /   ____  ____ _____/ /__  _____
+      / /|_/ / __ `/ __ \/ / / / __ `/ /  / / / / /   / /      / /   / __ \/ __ `/ __  / _ \/ ___/
+     / /  / / /_/ / / / / /_/ / /_/ / /  / /_/ / /___/ /___   / /___/ /_/ / /_/ / /_/ /  __/ /
+    /_/  /_/\__,_/_/ /_/\__,_/\__,_/_/  /_____/_____/_____/  /_____/\____/\__,_/\__,_/\___/_/
+                                                                                       
+                                                                                       
+                           Custom LoadLibrary / GetProcAddress (x86 / x64)  
+                             Load DLL and retrieve functions manually 
+```
+<p align="center">
+    <img src="https://img.shields.io/badge/language-C%2B%2B-%23f34b7d.svg?style=for-the-badge&logo=appveyor" alt="C++">
+    <img src="https://img.shields.io/badge/platform-Windows-0078d7.svg?style=for-the-badge&logo=appveyor" alt="Windows">
+    <img src="https://img.shields.io/badge/arch-x86-red.svg?style=for-the-badge&logo=appveyor" alt="x86">
+    <img src="https://img.shields.io/badge/arch-x64-green.svg?style=for-the-badge&logo=appveyor" alt="x64">
+</p>
 
 ## :open_book: Project Overview :
 
