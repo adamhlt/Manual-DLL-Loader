@@ -16,6 +16,9 @@ namespace MemoryLoader::Detail
 	/** Returns the main PE structures of an image. */
 	PeHeaders GetHeaders(LPVOID lpImage) noexcept;
 
+	/** Returns one of the optional header data directories. */
+	IMAGE_DATA_DIRECTORY GetDataDirectory(LPVOID lpImage, DWORD dIndex) noexcept;
+
 	/** Checks that a raw PE image is well formed and fits in dImageSize bytes. */
 	bool IsValidPe(LPVOID lpImage, SIZE_T dImageSize) noexcept;
 

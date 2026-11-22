@@ -11,13 +11,28 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\DelayImports.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exceptions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exports.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\Imports.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Loader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Log.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\PeImage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Protection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Relocations.cpp">
@@ -34,6 +49,15 @@
     <ClInclude Include="src\Common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\DelayImports.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Exceptions.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Exports.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\Imports.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -41,6 +65,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\PeImage.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Protection.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Relocations.hpp">

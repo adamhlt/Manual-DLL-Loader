@@ -16,6 +16,16 @@ namespace MemoryLoader::Detail
 		return headers;
 	}
 
+	IMAGE_DATA_DIRECTORY GetDataDirectory(LPVOID lpImage, DWORD dIndex) noexcept
+	{
+		IMAGE_DATA_DIRECTORY directory{};
+		if (lpImage == nullptr || dIndex >= IMAGE_NUMBEROF_DIRECTORY_ENTRIES)
+			return directory;
+
+		const PeHeaders headers = GetHeaders(lpImage);
+		return headers.lpNtHeaders->OptionalHeader.DataDirectory[dIndex];
+	}
+
 	bool IsValidPe(LPVOID lpImage, SIZE_T dImageSize) noexcept
 	{
 		if (lpImage == nullptr || dImageSize < sizeof(IMAGE_DOS_HEADER))

@@ -119,18 +119,27 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\DelayImports.cpp" />
+    <ClCompile Include="src\Exceptions.cpp" />
+    <ClCompile Include="src\Exports.cpp" />
     <ClCompile Include="src\Imports.cpp" />
     <ClCompile Include="src\Loader.cpp" />
+    <ClCompile Include="src\Log.cpp" />
     <ClCompile Include="src\PeImage.cpp" />
+    <ClCompile Include="src\Protection.cpp" />
     <ClCompile Include="src\Relocations.cpp" />
     <ClCompile Include="src\Tls.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ManualLoader\Loader.hpp" />
     <ClInclude Include="src\Common.hpp" />
+    <ClInclude Include="src\DelayImports.hpp" />
+    <ClInclude Include="src\Exceptions.hpp" />
+    <ClInclude Include="src\Exports.hpp" />
     <ClInclude Include="src\Imports.hpp" />
     <ClInclude Include="src\Log.hpp" />
     <ClInclude Include="src\PeImage.hpp" />
+    <ClInclude Include="src\Protection.hpp" />
     <ClInclude Include="src\Relocations.hpp" />
     <ClInclude Include="src\Tls.hpp" />
   </ItemGroup>

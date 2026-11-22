@@ -36,9 +36,21 @@ Loading steps :
 
 1. Copy PE image in memory
 2. Perform the relocations
-3. Resolve imports (IAT)
-4. Execute TLS callbacks
-5. Execute DLL's entry point 
+3. Resolve imports (IAT), including delay-loaded imports
+4. Set up the static TLS and execute the TLS callbacks
+5. Register the exception table (x64, so SEH / C++ exceptions work)
+6. Restore the section protections from the PE characteristics
+7. Execute DLL's entry point 
+
+Features :
+
+- Load a DLL from a file or from an in-memory buffer.
+- Resolve regular and delay-loaded imports.
+- Resolve forwarded exports (`"OTHERDLL.Function"`).
+- Enumerate the exports of a module.
+- RAII `MemoryLoader::Module` wrapper.
+- Configurable logging (levels and custom callback).
+- Per-section memory protection instead of `PAGE_EXECUTE_READWRITE` everywhere.
 
 The GetFunctionAddress can also be used with a library imported with LoadLibraryA official Windows function.
 
@@ -49,12 +61,14 @@ Manual-DLL-Loader/
 ├── ManualLoader.sln        Visual Studio solution (open this file)
 ├── ManualLoader/           Loader library (static lib)
 │   ├── include/ManualLoader/Loader.hpp   Public API
-│   └── src/                Implementation (PeImage, Relocations, Imports, Tls, Log)
-└── Demo/                   Console sample using the loader
+│   └── src/                Implementation (PeImage, Relocations, Imports, DelayImports,
+│                           Exports, Exceptions, Protection, Tls, Log)
+├── Demo/                   Console sample using the loader
+└── LoaderCLI/              Command line tool to inspect a DLL
 ```
 
-The loader is built as a reusable static library (`ManualLoader`); the `Demo`
-project is a console application that references it.
+The loader is built as a reusable static library (`ManualLoader`); the `Demo` and
+`LoaderCLI` projects are console applications that reference it.
 
 ## :rocket: Getting Started
 ### Visual Studio :
@@ -63,6 +77,24 @@ project is a console application that references it.
 
 > **Note** <br>
 > The loader can be compiled in x86 or x64.
+
+### Command line tool
+
+```
+LoaderCLI [options] <path-to-dll> [export]
+
+  -l, --list      List the exports (default when no export is given).
+  -c, --call      Call the given export as void(*)(void).
+  -v, --verbose   Enable debug logging.
+  -q, --quiet     Only report errors.
+  -h, --help      Show the help message.
+```
+
+Example :
+
+```
+LoaderCLI -l C:\Windows\System32\version.dll
+```
 
 ## :test_tube: Example
 
@@ -101,6 +133,33 @@ int main()
 > `LoadDLL` has an overload taking a `MemoryLoader::Status*` that reports the
 > precise reason of a failure (invalid PE, wrong architecture, unresolved import, ...).
 > The verbosity of the loader output can be tuned with `MemoryLoader::SetLogLevel`.
+
+### RAII wrapper and other entry points
+
+```c++
+// The module is unmapped automatically when it goes out of scope.
+const MemoryLoader::Module module = MemoryLoader::Module::FromFile("test.dll");
+
+// Load from an in-memory buffer instead of a file.
+// const MemoryLoader::Module module = MemoryLoader::Module::FromMemory(bytes, size);
+
+if (!module)
+	return -1;
+
+const auto MessageFnc = (MessageFncPtr)module.GetFunction("Message");
+
+// Enumerate every export of the module.
+for (const auto& entry : module.GetExports())
+{
+	// entry.lpName, entry.dOrdinal, entry.lpAddress
+}
+
+// Redirect the loader output to a custom sink.
+MemoryLoader::SetLogCallback([](MemoryLoader::LogLevel level, const char* message)
+{
+	// ...
+});
+```
 
 ### Test DLL
 

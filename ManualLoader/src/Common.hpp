@@ -15,6 +15,20 @@ namespace MemoryLoader::Detail
 		WORD Type : 4;
 	};
 
+	/** Delay-load import descriptor (IMAGE_DELAYLOAD_DESCRIPTOR). */
+	struct DelayLoadDescriptor
+	{
+		DWORD Attributes;
+		DWORD DllNameRva;
+		DWORD ModuleHandleRva;
+		DWORD ImportAddressTableRva;
+		DWORD ImportNameTableRva;
+		DWORD BoundImportAddressTableRva;
+		DWORD UnloadInformationTableRva;
+		DWORD TimeDateStamp;
+	};
+	using PDelayLoadDescriptor = DelayLoadDescriptor*;
+
 	/** Interprets a pointer as an integer so it can be used in address arithmetic. */
 	inline DWORD_PTR AsInteger(LPCVOID lpPointer) noexcept
 	{
