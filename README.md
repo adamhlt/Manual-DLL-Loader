@@ -45,6 +45,9 @@ Loading steps :
 Features :
 
 - Load a DLL from a file or from an in-memory buffer.
+- Optional PEB registration: by default a mapped module stays hidden, but it can
+  be registered in the PEB loader lists (visible to `CreateToolhelp32Snapshot` /
+  `EnumProcessModules`) and unregistered again at any time.
 - Resolve regular and delay-loaded imports. Delay-loaded imports are resolved
   eagerly when possible; unavailable ones are left to the image's own delay-load
   helper.
@@ -162,6 +165,29 @@ MemoryLoader::SetLogCallback([](MemoryLoader::LogLevel level, const char* messag
 	// ...
 });
 ```
+
+### Hiding / exposing a module
+
+A mapped module is hidden from the OS by default. It can be registered in the
+PEB loader lists when it needs to be enumerated:
+
+```c++
+MemoryLoader::LoadOptions options;
+options.registerModule = true;   // false by default: the module stays hidden
+
+MemoryLoader::Module module = MemoryLoader::Module::FromFile("plugin.dll", options);
+
+// Hide it again, or expose it at runtime.
+module.UnregisterModule();
+module.RegisterModule("plugin.dll");
+```
+
+> **Note** <br>
+> Registering the module populates the three PEB loader lists, so it shows up in
+> `CreateToolhelp32Snapshot` / `EnumProcessModules`. The undocumented, version
+> specific lookup tables kept by ntdll (module hash table and address index) are
+> not updated, so `GetModuleFileName`, `GetModuleHandleEx(FROM_ADDRESS)` and
+> `RtlPcToFileHeader` still do not resolve the module.
 
 ### Test DLL
 

@@ -51,6 +51,7 @@ namespace MemoryLoader
 		DelayImportResolutionFailed,   // reserved: delay imports are resolved best-effort
 		ExceptionTableFailed,
 		ProtectionFailed,
+		ModuleRegistrationFailed,
 		EntryPointFailed,
 	};
 
@@ -62,6 +63,27 @@ namespace MemoryLoader
 		LPVOID lpAddress;
 	};
 
+	/** Options controlling how a module is mapped. */
+	struct LoadOptions
+	{
+		/**
+		 *	Registers the module in the PEB loader lists (InLoadOrder,
+		 *	InMemoryOrder and InInitializationOrder), so it is enumerated like a
+		 *	normally loaded module by CreateToolhelp32Snapshot / EnumProcessModules
+		 *	/ LdrEnumerateLoadedModules.
+		 *
+		 *	Note: ntdll also keeps its own lookup tables (a module hash table and an
+		 *	address index) that are undocumented and version specific; they are not
+		 *	updated, so handle/name based lookups such as GetModuleFileName,
+		 *	GetModuleHandleEx(FROM_ADDRESS) or RtlPcToFileHeader still do not
+		 *	resolve the module.
+		 *
+		 *	When false (the default), the module stays completely invisible to the
+		 *	OS, which is the classic manual-mapping behaviour and keeps it hidden.
+		 */
+		bool registerModule = false;
+	};
+
 	/**
 	 *	Loads a DLL from a file.
 	 *	\param lpDLLPath : path of the DLL file.
@@ -69,6 +91,7 @@ namespace MemoryLoader
 	 */
 	LPVOID LoadDLL(const char* lpDLLPath);
 	LPVOID LoadDLL(const char* lpDLLPath, Status* pStatus);
+	LPVOID LoadDLL(const char* lpDLLPath, const LoadOptions& options, Status* pStatus = nullptr);
 
 	/**
 	 *	Loads a DLL from an in-memory PE image.
@@ -78,6 +101,22 @@ namespace MemoryLoader
 	 */
 	LPVOID LoadDLLFromMemory(LPCVOID lpImage, SIZE_T dImageSize);
 	LPVOID LoadDLLFromMemory(LPCVOID lpImage, SIZE_T dImageSize, Status* pStatus);
+	LPVOID LoadDLLFromMemory(LPCVOID lpImage, SIZE_T dImageSize, const LoadOptions& options, Status* pStatus = nullptr);
+
+	/**
+	 *	Registers an already mapped module in the PEB loader lists so it becomes
+	 *	enumerable by the OS (CreateToolhelp32Snapshot, EnumProcessModules, ...).
+	 *	\param lpModule : base address of the module.
+	 *	\param lpName : name to expose; derived from the image when nullptr.
+	 *	\return : true on success, false otherwise.
+	 */
+	bool RegisterModule(LPVOID lpModule, const char* lpName = nullptr);
+
+	/**
+	 *	Removes a module from the PEB loader lists so it becomes hidden again.
+	 *	Safe to call on a module that was never registered.
+	 */
+	void UnregisterModule(LPVOID lpModule);
 
 	/**
 	 *	Retrieves an exported function by name. Forwarded exports are resolved.
@@ -125,9 +164,11 @@ namespace MemoryLoader
 
 		/** Loads a module from a file. */
 		static Module FromFile(const char* lpDLLPath, Status* pStatus = nullptr);
+		static Module FromFile(const char* lpDLLPath, const LoadOptions& options, Status* pStatus = nullptr);
 
 		/** Loads a module from an in-memory PE image. */
 		static Module FromMemory(LPCVOID lpImage, SIZE_T dImageSize, Status* pStatus = nullptr);
+		static Module FromMemory(LPCVOID lpImage, SIZE_T dImageSize, const LoadOptions& options, Status* pStatus = nullptr);
 
 		bool IsValid() const noexcept;
 		LPVOID Get() const noexcept;
@@ -136,6 +177,12 @@ namespace MemoryLoader
 		LPVOID GetFunction(const char* lpFunctionName) const;
 		LPVOID GetFunctionByOrdinal(DWORD_PTR dOrdinal) const;
 		std::vector<Export> GetExports() const;
+
+		/** Registers the module in the PEB loader lists. */
+		bool RegisterModule(const char* lpName = nullptr) const;
+
+		/** Removes the module from the PEB loader lists. */
+		void UnregisterModule() const;
 
 		/** Relinquishes ownership; the caller becomes responsible for FreeDLL. */
 		LPVOID Release() noexcept;

@@ -125,6 +125,7 @@
     <ClCompile Include="src\Imports.cpp" />
     <ClCompile Include="src\Loader.cpp" />
     <ClCompile Include="src\Log.cpp" />
+    <ClCompile Include="src\ModuleRegistration.cpp" />
     <ClCompile Include="src\PeImage.cpp" />
     <ClCompile Include="src\Protection.cpp" />
     <ClCompile Include="src\Relocations.cpp" />
@@ -138,6 +139,7 @@
     <ClInclude Include="src\Exports.hpp" />
     <ClInclude Include="src\Imports.hpp" />
     <ClInclude Include="src\Log.hpp" />
+    <ClInclude Include="src\ModuleRegistration.hpp" />
     <ClInclude Include="src\PeImage.hpp" />
     <ClInclude Include="src\Protection.hpp" />
     <ClInclude Include="src\Relocations.hpp" />

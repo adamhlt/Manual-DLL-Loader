@@ -8,6 +8,7 @@
 #include "Exports.hpp"
 #include "Imports.hpp"
 #include "Log.hpp"
+#include "ModuleRegistration.hpp"
 #include "PeImage.hpp"
 #include "Protection.hpp"
 #include "Relocations.hpp"
@@ -145,8 +146,22 @@ namespace MemoryLoader
 			}
 		}
 
+		/** Returns the internal name of the image (export directory), or a fallback. */
+		const char* ResolveModuleName(LPVOID lpImage, const char* lpFallback) noexcept
+		{
+			const IMAGE_DATA_DIRECTORY exportDirectory = Detail::GetDataDirectory(lpImage, IMAGE_DIRECTORY_ENTRY_EXPORT);
+			if (exportDirectory.VirtualAddress != 0)
+			{
+				const auto lpExports = reinterpret_cast<PIMAGE_EXPORT_DIRECTORY>(Detail::AsInteger(lpImage) + exportDirectory.VirtualAddress);
+				if (lpExports->Name != 0)
+					return reinterpret_cast<const char*>(Detail::AsInteger(lpImage) + lpExports->Name);
+			}
+
+			return lpFallback;
+		}
+
 		/** Maps and initializes a raw PE image. Returns the module base or nullptr. */
-		LPVOID MapAndInitialize(LPVOID lpRawImage, SIZE_T dRawSize, Status* pStatus)
+		LPVOID MapAndInitialize(LPVOID lpRawImage, SIZE_T dRawSize, const LoadOptions& options, const char* lpModuleName, Status* pStatus)
 		{
 			const auto fail = [pStatus](Status status) noexcept -> LPVOID
 			{
@@ -193,6 +208,13 @@ namespace MemoryLoader
 				return fail(Status::DelayImportResolutionFailed);
 			LogInfo("Delay imports resolved.");
 
+			if (options.registerModule)
+			{
+				const char* lpName = lpModuleName != nullptr ? lpModuleName : ResolveModuleName(mappedImage.Get(), "manual_module.dll");
+				if (!Detail::RegisterModule(mappedImage.Get(), lpName))
+					return fail(Status::ModuleRegistrationFailed);
+			}
+
 			Detail::InitializeStaticTls(mappedImage.Get());
 			Detail::RunTlsCallbacks(mappedImage.Get(), DLL_PROCESS_ATTACH);
 
@@ -222,10 +244,15 @@ namespace MemoryLoader
 
 	LPVOID LoadDLL(const char* lpDLLPath)
 	{
-		return LoadDLL(lpDLLPath, nullptr);
+		return LoadDLL(lpDLLPath, LoadOptions{}, nullptr);
 	}
 
 	LPVOID LoadDLL(const char* lpDLLPath, Status* pStatus)
+	{
+		return LoadDLL(lpDLLPath, LoadOptions{}, pStatus);
+	}
+
+	LPVOID LoadDLL(const char* lpDLLPath, const LoadOptions& options, Status* pStatus)
 	{
 		const auto fail = [pStatus](Status status) noexcept -> LPVOID
 		{
@@ -244,18 +271,36 @@ namespace MemoryLoader
 			return fail(Status::FileNotFound);
 
 		LogInfo("PE file read at 0x%p (%zu bytes).", fileContent.Data(), fileContent.Size());
-		return MapAndInitialize(fileContent.Data(), fileContent.Size(), pStatus);
+		return MapAndInitialize(fileContent.Data(), fileContent.Size(), options, lpDLLPath, pStatus);
 	}
 
 	LPVOID LoadDLLFromMemory(LPCVOID lpImage, SIZE_T dImageSize)
 	{
-		return LoadDLLFromMemory(lpImage, dImageSize, nullptr);
+		return LoadDLLFromMemory(lpImage, dImageSize, LoadOptions{}, nullptr);
 	}
 
 	LPVOID LoadDLLFromMemory(LPCVOID lpImage, SIZE_T dImageSize, Status* pStatus)
 	{
+		return LoadDLLFromMemory(lpImage, dImageSize, LoadOptions{}, pStatus);
+	}
+
+	LPVOID LoadDLLFromMemory(LPCVOID lpImage, SIZE_T dImageSize, const LoadOptions& options, Status* pStatus)
+	{
 		LogInfo("DLL LOADER (from memory)");
-		return MapAndInitialize(const_cast<LPVOID>(lpImage), dImageSize, pStatus);
+		return MapAndInitialize(const_cast<LPVOID>(lpImage), dImageSize, options, nullptr, pStatus);
+	}
+
+	bool RegisterModule(LPVOID lpModule, const char* lpName)
+	{
+		if (lpModule == nullptr)
+			return false;
+
+		return Detail::RegisterModule(lpModule, lpName != nullptr ? lpName : ResolveModuleName(lpModule, "manual_module.dll"));
+	}
+
+	void UnregisterModule(LPVOID lpModule)
+	{
+		Detail::UnregisterModule(lpModule);
 	}
 
 	LPVOID GetFunctionAddress(LPVOID lpModule, const char* lpFunctionName)
@@ -341,6 +386,7 @@ namespace MemoryLoader
 		Detail::RunTlsCallbacks(lpModule, DLL_PROCESS_DETACH);
 		Detail::CleanupStaticTls(lpModule);
 		Detail::UnregisterExceptionTable(lpModule);
+		Detail::UnregisterModule(lpModule);
 
 		if (!VirtualFree(lpModule, 0, MEM_RELEASE))
 		{
@@ -382,9 +428,19 @@ namespace MemoryLoader
 		return Module(LoadDLL(lpDLLPath, pStatus));
 	}
 
+	Module Module::FromFile(const char* lpDLLPath, const LoadOptions& options, Status* pStatus)
+	{
+		return Module(LoadDLL(lpDLLPath, options, pStatus));
+	}
+
 	Module Module::FromMemory(LPCVOID lpImage, SIZE_T dImageSize, Status* pStatus)
 	{
 		return Module(LoadDLLFromMemory(lpImage, dImageSize, pStatus));
+	}
+
+	Module Module::FromMemory(LPCVOID lpImage, SIZE_T dImageSize, const LoadOptions& options, Status* pStatus)
+	{
+		return Module(LoadDLLFromMemory(lpImage, dImageSize, options, pStatus));
 	}
 
 	bool Module::IsValid() const noexcept
@@ -415,6 +471,16 @@ namespace MemoryLoader
 	std::vector<Export> Module::GetExports() const
 	{
 		return MemoryLoader::GetExports(m_lpBase);
+	}
+
+	bool Module::RegisterModule(const char* lpName) const
+	{
+		return MemoryLoader::RegisterModule(m_lpBase, lpName);
+	}
+
+	void Module::UnregisterModule() const
+	{
+		MemoryLoader::UnregisterModule(m_lpBase);
 	}
 
 	LPVOID Module::Release() noexcept
