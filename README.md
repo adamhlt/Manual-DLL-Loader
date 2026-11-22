@@ -37,10 +37,11 @@ Loading steps :
 1. Copy PE image in memory
 2. Perform the relocations
 3. Resolve imports (IAT), including delay-loaded imports
-4. Set up the static TLS and execute the TLS callbacks
-5. Register the exception table (x64, so SEH / C++ exceptions work)
-6. Restore the section protections from the PE characteristics
-7. Execute DLL's entry point 
+4. Optionally register the module in the PEB loader lists
+5. Set up the static TLS and execute the TLS callbacks
+6. Register the exception table (x64, so SEH / C++ exceptions work)
+7. Restore the section protections from the PE characteristics
+8. Execute DLL's entry point 
 
 Features :
 
@@ -67,7 +68,7 @@ Manual-DLL-Loader/
 ├── ManualLoader/           Loader library (static lib)
 │   ├── include/ManualLoader/Loader.hpp   Public API
 │   └── src/                Implementation (PeImage, Relocations, Imports, DelayImports,
-│                           Exports, Exceptions, Protection, Tls, Log)
+│                           Exports, Exceptions, Protection, Tls, ModuleRegistration, Log)
 ├── Demo/                   Console sample using the loader
 └── LoaderCLI/              Command line tool to inspect a DLL
 ```
@@ -188,6 +189,34 @@ module.RegisterModule("plugin.dll");
 > specific lookup tables kept by ntdll (module hash table and address index) are
 > not updated, so `GetModuleFileName`, `GetModuleHandleEx(FROM_ADDRESS)` and
 > `RtlPcToFileHeader` still do not resolve the module.
+
+## :warning: Known limitations
+
+Mapping a PE image without involving the OS loader has a few consequences:
+
+- **Module recognition.** The mapped module is unknown to ntdll's internal
+  lookup tables, so `GetModuleFileName`, `GetModuleHandleEx(FROM_ADDRESS)` and
+  `RtlPcToFileHeader` do not resolve it. No documented API can register an
+  existing memory region as a module; only the PEB loader lists can be populated
+  (see `LoadOptions::registerModule`).
+
+- **Resources work.** `FindResource`, `LoadString`, `LoadImage` and
+  `SizeofResource` read the resource directory straight from the mapped base, so
+  they work on a hidden, non-registered module.
+
+- **Delay-loaded imports** are resolved eagerly when possible. When a
+  delay-loaded dependency or symbol is unavailable, the thunk is left untouched
+  so the image's own delay-load helper resolves it on demand; the load is not
+  aborted. VA-based descriptors (Visual Studio 2015 and earlier) are skipped.
+
+- **Static TLS** is initialized for the thread that performs the load only.
+  Threads created afterwards do not receive a TLS block, which would require
+  hooking thread creation.
+
+- **System DLLs with process-wide one-time initialization** cannot be mapped.
+  `user32.dll` for instance connects to win32k, and its `DllMain` refuses to
+  initialize when the module is not the one the OS loaded. Load such DLLs with
+  the normal `LoadLibrary` instead.
 
 ### Test DLL
 
