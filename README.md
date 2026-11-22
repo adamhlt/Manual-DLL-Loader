@@ -42,10 +42,24 @@ Loading steps :
 
 The GetFunctionAddress can also be used with a library imported with LoadLibraryA official Windows function.
 
+## :file_folder: Project Layout
+
+```
+Manual-DLL-Loader/
+├── ManualLoader.sln        Visual Studio solution (open this file)
+├── ManualLoader/           Loader library (static lib)
+│   ├── include/ManualLoader/Loader.hpp   Public API
+│   └── src/                Implementation (PeImage, Relocations, Imports, Tls, Log)
+└── Demo/                   Console sample using the loader
+```
+
+The loader is built as a reusable static library (`ManualLoader`); the `Demo`
+project is a console application that references it.
+
 ## :rocket: Getting Started
 ### Visual Studio :
-1. Open the solution file (.sln).
-2. Build the project in Release (x86 or x64)
+1. Open the solution file `ManualLoader.sln` at the root of the repository.
+2. Build the solution in Release (x86 or x64). The `Demo` project links against the `ManualLoader` library.
 
 > **Note** <br>
 > The loader can be compiled in x86 or x64.
@@ -60,17 +74,18 @@ using MessageFncPtr = void (*)();
 
 int main()
 {
-	const auto lpModule = MemoryLoader::LoadDLL((LPSTR)"test.dll");
+	MemoryLoader::Status status = MemoryLoader::Status::Success;
+	const auto lpModule = MemoryLoader::LoadDLL("test.dll", &status);
 	if (lpModule == nullptr)
 		return -1;
 
-	auto MessageFnc = (MessageFncPtr)MemoryLoader::GetFunctionAddress((LPVOID)lpModule, (const LPSTR)"Message");
+	auto MessageFnc = (MessageFncPtr)MemoryLoader::GetFunctionAddress(lpModule, "Message");
 	if (MessageFnc == nullptr)
 		return -1;
 
 	MessageFnc();
 
-	MessageFnc = (MessageFncPtr)MemoryLoader::GetFunctionAddressByOrdinal((LPVOID)lpModule, 1);
+	MessageFnc = (MessageFncPtr)MemoryLoader::GetFunctionAddressByOrdinal(lpModule, 1);
 	if (MessageFnc == nullptr)
 		return -1;
 
@@ -81,6 +96,11 @@ int main()
 	return 0;
 }
 ```
+
+> **Note** <br>
+> `LoadDLL` has an overload taking a `MemoryLoader::Status*` that reports the
+> precise reason of a failure (invalid PE, wrong architecture, unresolved import, ...).
+> The verbosity of the loader output can be tuned with `MemoryLoader::SetLogLevel`.
 
 ### Test DLL
 

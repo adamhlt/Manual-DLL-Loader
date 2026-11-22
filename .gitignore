@@ -1,0 +1,36 @@
+# Build results
+[Bb]uild/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.lib
+*.exp
+*.idb
+*.log
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.VC.db
+*.VC.VC.opendb
+*.aps
+*.ncb
+*.sdf
+*.opensdf
+*.opendb
+*.tlog
+*.iobj
+*.ipdb
+
+# OS / editors
+Thumbs.db
+desktop.ini
+.DS_Store
