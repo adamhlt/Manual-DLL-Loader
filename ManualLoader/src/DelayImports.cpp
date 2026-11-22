@@ -32,15 +32,17 @@ namespace MemoryLoader::Detail
 			const HMODULE hModule = LoadLibraryA(lpLibraryName);
 			if (hModule == nullptr)
 			{
-				LogError("Unable to load the delay-loaded dependency \"%s\".", lpLibraryName);
-				return false;
+				// Delay-loaded dependencies are optional: if the module is not
+				// available, leave the imports to the delay-load helper.
+				LogWarning("The delay-loaded dependency \"%s\" is unavailable; it will be resolved on demand.", lpLibraryName);
+				continue;
 			}
 
 			LogInfo("Resolving delay imports from \"%s\".", lpLibraryName);
 
 			const DWORD_PTR dLookupRva = lpDescriptor->ImportNameTableRva != 0 ? lpDescriptor->ImportNameTableRva : lpDescriptor->ImportAddressTableRva;
-			if (!ResolveImportTable(lpImage, hModule, lpLibraryName, dLookupRva, lpDescriptor->ImportAddressTableRva))
-				return false;
+			if (!ResolveImportTable(lpImage, hModule, lpLibraryName, dLookupRva, lpDescriptor->ImportAddressTableRva, /*bBestEffort=*/true))
+				continue;
 
 			// Publish the module handle so the delay-load helper does not reload it.
 			if (lpDescriptor->ModuleHandleRva != 0)

@@ -48,7 +48,7 @@ namespace MemoryLoader
 		AllocationFailed,
 		RelocationFailed,
 		ImportResolutionFailed,
-		DelayImportResolutionFailed,
+		DelayImportResolutionFailed,   // reserved: delay imports are resolved best-effort
 		ExceptionTableFailed,
 		ProtectionFailed,
 		EntryPointFailed,

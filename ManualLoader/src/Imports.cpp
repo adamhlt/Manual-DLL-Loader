@@ -5,34 +5,50 @@
 
 namespace MemoryLoader::Detail
 {
-	bool ResolveImportTable(LPVOID lpImage, HMODULE hModule, const char* lpLibraryName, DWORD_PTR dLookupRva, DWORD_PTR dIatRva) noexcept
+	bool ResolveImportTable(LPVOID lpImage, HMODULE hModule, const char* lpLibraryName, DWORD_PTR dLookupRva, DWORD_PTR dIatRva, bool bBestEffort) noexcept
 	{
 		auto lpLookup = reinterpret_cast<PIMAGE_THUNK_DATA>(AsInteger(lpImage) + dLookupRva);
 		auto lpIat = reinterpret_cast<PIMAGE_THUNK_DATA>(AsInteger(lpImage) + dIatRva);
 
+		bool bAllResolved = true;
+
 		for (; lpLookup->u1.AddressOfData != 0; ++lpLookup, ++lpIat)
 		{
+			DWORD_PTR dFunction = 0;
+
 			if (IMAGE_SNAP_BY_ORDINAL(lpLookup->u1.Ordinal))
 			{
 				const WORD dOrdinal = static_cast<WORD>(IMAGE_ORDINAL(lpLookup->u1.Ordinal));
-				lpIat->u1.Function = reinterpret_cast<DWORD_PTR>(GetProcAddress(hModule, MAKEINTRESOURCEA(dOrdinal)));
+				dFunction = reinterpret_cast<DWORD_PTR>(GetProcAddress(hModule, MAKEINTRESOURCEA(dOrdinal)));
 				LogDebug("  Ordinal %u", dOrdinal);
 			}
 			else
 			{
 				const auto lpImport = reinterpret_cast<PIMAGE_IMPORT_BY_NAME>(AsInteger(lpImage) + lpLookup->u1.AddressOfData);
-				lpIat->u1.Function = reinterpret_cast<DWORD_PTR>(GetProcAddress(hModule, reinterpret_cast<LPCSTR>(lpImport->Name)));
+				dFunction = reinterpret_cast<DWORD_PTR>(GetProcAddress(hModule, reinterpret_cast<LPCSTR>(lpImport->Name)));
 				LogDebug("  %s", lpImport->Name);
 			}
 
-			if (lpIat->u1.Function == 0)
+			if (dFunction == 0)
 			{
-				LogError("Unable to resolve an import from \"%s\".", lpLibraryName);
-				return false;
+				bAllResolved = false;
+
+				// For optional (delay-loaded) imports, leave the entry untouched so the
+				// delay-load helper of the image can retry it on demand.
+				if (!bBestEffort)
+				{
+					LogError("Unable to resolve an import from \"%s\".", lpLibraryName);
+					return false;
+				}
+
+				LogWarning("A delay-loaded symbol from \"%s\" is unavailable; it will be resolved on demand.", lpLibraryName);
+				continue;
 			}
+
+			lpIat->u1.Function = dFunction;
 		}
 
-		return true;
+		return bAllResolved;
 	}
 
 	bool ResolveImports(LPVOID lpImage) noexcept
@@ -62,7 +78,7 @@ namespace MemoryLoader::Detail
 
 			// Prefer the original thunk (names) and always write into the IAT.
 			const DWORD_PTR dLookupRva = lpDescriptor->OriginalFirstThunk != 0 ? lpDescriptor->OriginalFirstThunk : lpDescriptor->FirstThunk;
-			if (!ResolveImportTable(lpImage, hModule, lpLibraryName, dLookupRva, lpDescriptor->FirstThunk))
+			if (!ResolveImportTable(lpImage, hModule, lpLibraryName, dLookupRva, lpDescriptor->FirstThunk, /*bBestEffort=*/false))
 				return false;
 		}
 

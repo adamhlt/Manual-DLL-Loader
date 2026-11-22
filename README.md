@@ -45,7 +45,9 @@ Loading steps :
 Features :
 
 - Load a DLL from a file or from an in-memory buffer.
-- Resolve regular and delay-loaded imports.
+- Resolve regular and delay-loaded imports. Delay-loaded imports are resolved
+  eagerly when possible; unavailable ones are left to the image's own delay-load
+  helper.
 - Resolve forwarded exports (`"OTHERDLL.Function"`).
 - Enumerate the exports of a module.
 - RAII `MemoryLoader::Module` wrapper.

@@ -19,9 +19,11 @@ namespace MemoryLoader::Detail
 	 *	\param lpLibraryName : name of the exporting module (used for logging).
 	 *	\param dLookupRva : RVA of the thunk table holding the names/ordinals.
 	 *	\param dIatRva : RVA of the import address table to fill.
+	 *	\param bBestEffort : when true, unresolved symbols are left untouched
+	 *		instead of failing (used for optional, delay-loaded imports).
 	 *	\return : true if all thunks were resolved, false otherwise.
 	 */
-	bool ResolveImportTable(LPVOID lpImage, HMODULE hModule, const char* lpLibraryName, DWORD_PTR dLookupRva, DWORD_PTR dIatRva) noexcept;
+	bool ResolveImportTable(LPVOID lpImage, HMODULE hModule, const char* lpLibraryName, DWORD_PTR dLookupRva, DWORD_PTR dIatRva, bool bBestEffort) noexcept;
 }
 
 #endif
